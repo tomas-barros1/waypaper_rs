@@ -341,9 +341,7 @@ fn draw_kitty_preview<W: Write>(stdout: &mut W, path: &PathBuf, area: Rect) -> i
         if index == 0 {
             write!(
                 stdout,
-                "\x1b_Ga=T,f=100,i=1,p=1,c={},r={},C=1,m={};{}\x1b\\",
-                area.width.saturating_sub(2),
-                area.height.saturating_sub(2),
+                "\x1b_Ga=t,f=100,i=1,q=2,m={};{}\x1b\\",
                 more,
                 String::from_utf8_lossy(chunk)
             )?;
@@ -356,6 +354,14 @@ fn draw_kitty_preview<W: Write>(stdout: &mut W, path: &PathBuf, area: Rect) -> i
             )?;
         }
     }
+    // Place only after the complete image has been transmitted. Using a=T
+    // would expose each partial chunk and causes visible flicker in Ghostty.
+    write!(
+        stdout,
+        "\x1b_Ga=p,i=1,p=1,c={},r={},C=1,q=2\x1b\\",
+        area.width.saturating_sub(2),
+        area.height.saturating_sub(2)
+    )?;
     stdout.flush()
 }
 
