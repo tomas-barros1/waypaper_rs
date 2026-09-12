@@ -25,7 +25,9 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
     enable_raw_mode()?;
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen)?;
+    clear_kitty_images(&mut stdout)?;
     let result = run_loop(&mut stdout);
+    clear_kitty_images(&mut stdout)?;
     disable_raw_mode()?;
     execute!(stdout, LeaveAlternateScreen)?;
     result
@@ -306,6 +308,11 @@ fn draw_kitty_preview<W: Write>(stdout: &mut W, path: &PathBuf, area: Rect) -> i
             String::from_utf8_lossy(chunk)
         )?;
     }
+    stdout.flush()
+}
+
+fn clear_kitty_images<W: Write>(stdout: &mut W) -> io::Result<()> {
+    write!(stdout, "\x1b_Ga=d,d=a,q=2\x1b\\")?;
     stdout.flush()
 }
 
