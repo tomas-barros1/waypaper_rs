@@ -1,38 +1,141 @@
 # waypaper-rs
 
-A fast GTK 4 + Libadwaita wallpaper picker for Wayland. The wallpaper service
-is independent from GTK so a future TUI can use the same backends and cache.
+`waypaper-rs` is a lightweight Wayland wallpaper picker for GTK 4,
+Libadwaita, and the terminal. It supports `swaybg` and `hyprpaper`, remembers
+the last folder and wallpaper, and provides a restore command for compositor
+startup files.
 
-Install `swaybg` (default) or `hyprpaper`, then run:
+The GTK application and the optional TUI share the same wallpaper service,
+cache, backend selection, and translations.
+
+## Features
+
+- GTK 4 + Libadwaita wallpaper grid
+- Filename search
+- Fixed-size thumbnail rendering with background loading
+- Low-memory thumbnail decoding
+- `swaybg` backend, used by default when available
+- `hyprpaper` backend
+- Persistent state in `$XDG_CACHE_HOME/waypaper-rs/state.json`
+- English and Brazilian Portuguese translations using `rust-i18n`
+- Optional terminal UI with keyboard navigation
+- Kitty graphics protocol previews in Kitty and Ghostty
+- Bounded `chafa` character preview for terminals without Kitty graphics
+
+## Runtime dependencies
+
+Install at least one wallpaper backend:
+
+```sh
+# Arch Linux
+sudo pacman -S swaybg
+# or
+sudo pacman -S hyprpaper
+```
+
+For the TUI fallback renderer, install `chafa`:
+
+```sh
+sudo pacman -S chafa
+```
+
+Kitty and Ghostty use their native Kitty graphics protocol. Other terminals
+use `chafa` in plain symbol mode, clipped to the preview pane. This avoids
+writing unbounded terminal control sequences into the TUI.
+
+The TUI renderer follows the same general split used by
+[`image.nvim`](https://github.com/3rd/image.nvim): native Kitty rendering for
+compatible terminals and a separate fallback path for other terminals.
+
+## Build and install
+
+Build the release binary, including TUI support:
+
+```sh
+make
+```
+
+Install under `/usr`:
+
+```sh
+sudo make PREFIX=/usr install
+```
+
+This installs the binary, desktop entry, application icon, and refreshes the
+desktop/icon caches. Uninstall with:
+
+```sh
+sudo make PREFIX=/usr uninstall
+```
+
+## GTK application
+
+Run from the source tree:
 
 ```sh
 cargo run
 ```
 
-The selected folder, wallpaper and backend are stored in
-`$XDG_CACHE_HOME/waypaper-rs/state.json` (or the platform cache directory).
+Or run the installed application:
 
-Restore the last wallpaper from a compositor startup command:
+```sh
+waypaper_rs
+```
+
+Choose a wallpaper folder, search by filename, and click a wallpaper to apply
+it. The selected folder and wallpaper are cached automatically.
+
+## Restore wallpaper
+
+Use this in a Wayland compositor startup file:
 
 ```sh
 waypaper_rs --restore
 ```
 
-Set the remembered folder without opening the UI:
+You can set the remembered folder without opening the GTK application:
 
 ```sh
 waypaper_rs --folder "$HOME/Pictures/Wallpapers"
 ```
 
-Build and run the optional terminal UI with Kitty image preview support:
+## TUI
+
+Build with TUI support through `make`, then run:
 
 ```sh
-make
 waypaper_rs --tui
 ```
 
-Use `/` to search, arrow keys to navigate, Enter to apply, and `q` or Escape
-to exit. The TUI uses the same cache and wallpaper backends as the GTK app.
+Or use Cargo directly:
 
-`hyprpaper` is preferred when available; otherwise `swaybg` is used. Set
-`LANG=pt_BR` to use the bundled Portuguese UI strings.
+```sh
+cargo run --features tui -- --tui
+```
+
+Controls:
+
+- `/` — search by filename
+- Arrow keys — move through wallpapers
+- Enter — apply the selected wallpaper
+- `q`, Escape, or Ctrl-C — exit
+
+The TUI uses the folder stored in the shared cache. Open the GTK app once and
+choose a folder before launching the TUI for the first time.
+
+## Internationalization
+
+Translations are compiled with [`rust-i18n`](https://docs.rs/rust-i18n/latest/rust_i18n/)
+from `src/locale/en.json` and `src/locale/pt_br.json`. Common locale forms such
+as `pt_BR`, `pt-BR`, and `pt_BR.UTF-8` are recognized.
+
+## Development
+
+```sh
+make check
+make test
+cargo check --features tui
+cargo test --features tui
+```
+
+The application ID is `io.github.tomas_barros1.waypaper_rs`.

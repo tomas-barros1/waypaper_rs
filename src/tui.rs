@@ -267,7 +267,7 @@ fn draw_preview<W: Write>(stdout: &mut W, path: &PathBuf, area: Rect) -> io::Res
         if let Ok(output) = Command::new("chafa")
             .args([
                 "--format=symbols",
-                "--colors=full",
+                "--colors=none",
                 "--polite=on",
                 "--size",
                 &format!(
@@ -280,8 +280,20 @@ fn draw_preview<W: Write>(stdout: &mut W, path: &PathBuf, area: Rect) -> io::Res
             .output()
         {
             if output.status.success() {
-                execute!(stdout, MoveTo(area.x, area.y))?;
-                stdout.write_all(&output.stdout)?;
+                let width = area.width.saturating_sub(2) as usize;
+                let height = area.height.saturating_sub(2);
+                for (row, line) in String::from_utf8_lossy(&output.stdout)
+                    .lines()
+                    .take(height as usize)
+                    .enumerate()
+                {
+                    execute!(stdout, MoveTo(area.x, area.y + row as u16))?;
+                    let clipped: String = line.chars().take(width).collect();
+                    stdout.write_all(clipped.as_bytes())?;
+                    for _ in clipped.chars().count()..width {
+                        stdout.write_all(b" ")?;
+                    }
+                }
                 return stdout.flush();
             }
         }
