@@ -314,12 +314,10 @@ fn supports_kitty_graphics() -> bool {
 fn draw_kitty_preview<W: Write>(stdout: &mut W, path: &PathBuf, area: Rect) -> io::Result<()> {
     // Kitty's f=100 payload is PNG. Decode JPEG/WebP/etc. and scale every
     // image before transmission so the protocol receives the format it claims.
-    let pixel_width = i32::from(area.width.saturating_sub(2))
-        .saturating_mul(8)
-        .max(1);
-    let pixel_height = i32::from(area.height.saturating_sub(2))
-        .saturating_mul(16)
-        .max(1);
+    let columns = area.width.saturating_sub(4).max(1);
+    let rows = area.height.saturating_sub(4).max(1);
+    let pixel_width = i32::from(columns).saturating_mul(8).max(1);
+    let pixel_height = i32::from(rows).saturating_mul(16).max(1);
     let pixbuf =
         match gtk::gdk_pixbuf::Pixbuf::from_file_at_scale(path, pixel_width, pixel_height, true) {
             Ok(pixbuf) => pixbuf,
@@ -331,7 +329,7 @@ fn draw_kitty_preview<W: Write>(stdout: &mut W, path: &PathBuf, area: Rect) -> i
     };
     let encoded = STANDARD.encode(bytes);
     write!(stdout, "\x1b_Ga=d,d=a,q=2\x1b\\")?;
-    execute!(stdout, MoveTo(area.x, area.y))?;
+    execute!(stdout, MoveTo(area.x + 1, area.y + 1))?;
     for (index, chunk) in encoded.as_bytes().chunks(4096).enumerate() {
         let more = if index + 1 < encoded.len().div_ceil(4096) {
             1
@@ -359,8 +357,7 @@ fn draw_kitty_preview<W: Write>(stdout: &mut W, path: &PathBuf, area: Rect) -> i
     write!(
         stdout,
         "\x1b_Ga=p,i=1,p=1,c={},r={},C=1,q=2\x1b\\",
-        area.width.saturating_sub(2),
-        area.height.saturating_sub(2)
+        columns, rows
     )?;
     stdout.flush()
 }
