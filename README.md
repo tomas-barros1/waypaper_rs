@@ -19,9 +19,8 @@ cache, backend selection, and translations.
 - Persistent state in `$XDG_CACHE_HOME/waypaper-rs/state.json`
 - English and Brazilian Portuguese translations using `rust-i18n`
 - Optional terminal UI with keyboard navigation
-- Kitty graphics protocol previews in Kitty
-- Bounded `chafa` character preview for Ghostty and terminals without native
-  Kitty graphics
+- Kitty graphics protocol previews in Kitty and Ghostty
+- Bounded `chafa` character preview for terminals without native Kitty graphics
 
 ## Runtime dependencies
 
@@ -40,11 +39,9 @@ For the TUI fallback renderer, install `chafa`:
 sudo pacman -S chafa
 ```
 
-Kitty uses the native Kitty graphics protocol. Ghostty advertises Kitty
-compatibility, but its direct graphics behavior is not stable enough for this
-renderer, so Ghostty uses `chafa` in plain symbol mode. Other terminals also
-use `chafa`, clipped to the preview pane. This avoids writing unbounded
-terminal control sequences into the TUI.
+Kitty and Ghostty use the native Kitty graphics protocol. Other terminals use
+`chafa` in plain symbol mode, clipped to the preview pane. This avoids writing
+unbounded terminal control sequences into the TUI.
 
 The TUI renderer follows the same general split used by
 [`image.nvim`](https://github.com/3rd/image.nvim): native Kitty rendering for
