@@ -43,6 +43,13 @@ Kitty and Ghostty use the native Kitty graphics protocol. Other terminals use
 `chafa` in plain symbol mode, clipped to the preview pane. This avoids writing
 unbounded terminal control sequences into the TUI.
 
+For native previews, each selected wallpaper is decoded and scaled to the
+preview area, then encoded as PNG because Kitty's raw payload mode expects PNG.
+The TUI transmits the complete image before creating its visible placement, so
+partial image chunks are not displayed. The placement uses Kitty `c`/`r`
+geometry, `C=1` cursor protection, and an inner four-cell safety margin to keep
+the image inside the preview pane.
+
 The TUI renderer follows the same general split used by
 [`image.nvim`](https://github.com/3rd/image.nvim): native Kitty rendering for
 compatible terminals and a separate fallback path for other terminals.
