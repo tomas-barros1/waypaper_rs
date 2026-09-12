@@ -3,6 +3,8 @@ use std::env;
 
 mod app;
 mod services;
+#[cfg(feature = "tui")]
+mod tui;
 
 rust_i18n::i18n!("src/locale", fallback = "en");
 
@@ -16,6 +18,21 @@ fn main() {
             std::process::exit(1);
         }
         return;
+    }
+    if args.iter().any(|arg| arg == "--tui") {
+        #[cfg(feature = "tui")]
+        {
+            if let Err(error) = tui::run() {
+                eprintln!("waypaper-rs: {error}");
+                std::process::exit(1);
+            }
+            return;
+        }
+        #[cfg(not(feature = "tui"))]
+        {
+            eprintln!("waypaper-rs: TUI support is not enabled; rebuild with --features tui");
+            std::process::exit(2);
+        }
     }
     if let Some(folder) = args
         .iter()

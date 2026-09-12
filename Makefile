@@ -12,13 +12,13 @@ ICON := icon.png
 all: build
 
 build:
-	cargo build --release
+	cargo build --release --features tui
 
 check:
-	cargo check
+	cargo check --features tui
 
 test:
-	cargo test
+	cargo test --features tui
 
 install: build
 	install -Dm755 $(TARGET) $(BINDIR)/waypaper_rs

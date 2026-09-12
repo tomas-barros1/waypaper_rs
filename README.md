@@ -24,5 +24,15 @@ Set the remembered folder without opening the UI:
 waypaper_rs --folder "$HOME/Pictures/Wallpapers"
 ```
 
+Build and run the optional terminal UI with Kitty image preview support:
+
+```sh
+make
+waypaper_rs --tui
+```
+
+Use `/` to search, arrow keys to navigate, Enter to apply, and `q` or Escape
+to exit. The TUI uses the same cache and wallpaper backends as the GTK app.
+
 `hyprpaper` is preferred when available; otherwise `swaybg` is used. Set
 `LANG=pt_BR` to use the bundled Portuguese UI strings.
