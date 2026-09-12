@@ -261,28 +261,42 @@ fn preview_rect(size: Size) -> Rect {
 }
 
 fn draw_preview<W: Write>(stdout: &mut W, path: &PathBuf, area: Rect) -> io::Result<()> {
-    if let Ok(output) = Command::new("chafa")
-        .args([
-            "--format=symbols",
-            "--colors=full",
-            "--polite=on",
-            "--size",
-            &format!(
-                "{}x{}",
-                area.width.saturating_sub(2),
-                area.height.saturating_sub(2)
-            ),
-        ])
-        .arg(path)
-        .output()
-    {
-        if output.status.success() {
-            execute!(stdout, MoveTo(area.x, area.y))?;
-            stdout.write_all(&output.stdout)?;
-            return stdout.flush();
+    if supports_kitty_graphics() {
+        draw_kitty_preview(stdout, path, area)
+    } else {
+        if let Ok(output) = Command::new("chafa")
+            .args([
+                "--format=symbols",
+                "--colors=full",
+                "--polite=on",
+                "--size",
+                &format!(
+                    "{}x{}",
+                    area.width.saturating_sub(2),
+                    area.height.saturating_sub(2)
+                ),
+            ])
+            .arg(path)
+            .output()
+        {
+            if output.status.success() {
+                execute!(stdout, MoveTo(area.x, area.y))?;
+                stdout.write_all(&output.stdout)?;
+                return stdout.flush();
+            }
         }
+        Ok(())
     }
-    draw_kitty_preview(stdout, path, area)
+}
+
+fn supports_kitty_graphics() -> bool {
+    std::env::var_os("KITTY_WINDOW_ID").is_some()
+        || std::env::var("TERM")
+            .map(|term| term == "xterm-kitty")
+            .unwrap_or(false)
+        || std::env::var("TERM_PROGRAM")
+            .map(|program| program.eq_ignore_ascii_case("ghostty"))
+            .unwrap_or(false)
 }
 
 fn draw_kitty_preview<W: Write>(stdout: &mut W, path: &PathBuf, area: Rect) -> io::Result<()> {
@@ -299,14 +313,23 @@ fn draw_kitty_preview<W: Write>(stdout: &mut W, path: &PathBuf, area: Rect) -> i
         } else {
             0
         };
-        write!(
-            stdout,
-            "\x1b_Ga=T,f=100,c={},r={},m={};{}\x1b\\",
-            area.width.saturating_sub(2),
-            area.height.saturating_sub(2),
-            more,
-            String::from_utf8_lossy(chunk)
-        )?;
+        if index == 0 {
+            write!(
+                stdout,
+                "\x1b_Ga=T,f=100,c={},r={},m={};{}\x1b\\",
+                area.width.saturating_sub(2),
+                area.height.saturating_sub(2),
+                more,
+                String::from_utf8_lossy(chunk)
+            )?;
+        } else {
+            write!(
+                stdout,
+                "\x1b_Gm={};{}\x1b\\",
+                more,
+                String::from_utf8_lossy(chunk)
+            )?;
+        }
     }
     stdout.flush()
 }
