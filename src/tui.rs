@@ -17,6 +17,7 @@ use ratatui::{
 use std::{
     io::{self, Stdout, Write},
     path::PathBuf,
+    process::Command,
     time::Duration,
 };
 
@@ -88,19 +89,24 @@ fn run_loop(stdout: &mut Stdout) -> Result<(), Box<dyn std::error::Error>> {
     let mut app = TuiApp::new(&cache).map_err(io::Error::other)?;
     let backend = CrosstermBackend::new(&mut *stdout);
     let mut terminal = Terminal::new(backend)?;
+    terminal.clear()?;
+    let mut redraw = true;
     loop {
-        terminal.clear()?;
-        let selected = app.selected_path().cloned();
-        terminal.draw(|frame| draw(frame, &app, selected.as_ref()))?;
-        if let Some(path) = selected.as_ref() {
-            let preview = preview_rect(terminal.size()?);
-            draw_kitty_preview(terminal.backend_mut(), path, preview)?;
+        if redraw {
+            let selected = app.selected_path().cloned();
+            terminal.draw(|frame| draw(frame, &app, selected.as_ref()))?;
+            if let Some(path) = selected.as_ref() {
+                let preview = preview_rect(terminal.size()?);
+                draw_preview(terminal.backend_mut(), path, preview)?;
+            }
+            redraw = false;
         }
         if event::poll(Duration::from_millis(100))? {
             if let Event::Key(key) = event::read()? {
                 if handle_key(&mut app, key)? {
                     break;
                 }
+                redraw = true;
             }
         }
     }
@@ -252,12 +258,38 @@ fn preview_rect(size: Size) -> Rect {
     }
 }
 
+fn draw_preview<W: Write>(stdout: &mut W, path: &PathBuf, area: Rect) -> io::Result<()> {
+    if let Ok(output) = Command::new("chafa")
+        .args([
+            "--format=symbols",
+            "--colors=full",
+            "--polite=on",
+            "--size",
+            &format!(
+                "{}x{}",
+                area.width.saturating_sub(2),
+                area.height.saturating_sub(2)
+            ),
+        ])
+        .arg(path)
+        .output()
+    {
+        if output.status.success() {
+            execute!(stdout, MoveTo(area.x, area.y))?;
+            stdout.write_all(&output.stdout)?;
+            return stdout.flush();
+        }
+    }
+    draw_kitty_preview(stdout, path, area)
+}
+
 fn draw_kitty_preview<W: Write>(stdout: &mut W, path: &PathBuf, area: Rect) -> io::Result<()> {
     let bytes = match std::fs::read(path) {
         Ok(bytes) => bytes,
         Err(_) => return Ok(()),
     };
     let encoded = STANDARD.encode(bytes);
+    write!(stdout, "\x1b_Ga=d,d=a,q=2\x1b\\")?;
     execute!(stdout, MoveTo(area.x, area.y))?;
     for (index, chunk) in encoded.as_bytes().chunks(4096).enumerate() {
         let more = if index + 1 < encoded.len().div_ceil(4096) {
