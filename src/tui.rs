@@ -312,7 +312,20 @@ fn supports_kitty_graphics() -> bool {
 }
 
 fn draw_kitty_preview<W: Write>(stdout: &mut W, path: &PathBuf, area: Rect) -> io::Result<()> {
-    let bytes = match std::fs::read(path) {
+    // Kitty's f=100 payload is PNG. Decode JPEG/WebP/etc. and scale every
+    // image before transmission so the protocol receives the format it claims.
+    let pixel_width = i32::from(area.width.saturating_sub(2))
+        .saturating_mul(8)
+        .max(1);
+    let pixel_height = i32::from(area.height.saturating_sub(2))
+        .saturating_mul(16)
+        .max(1);
+    let pixbuf =
+        match gtk::gdk_pixbuf::Pixbuf::from_file_at_scale(path, pixel_width, pixel_height, true) {
+            Ok(pixbuf) => pixbuf,
+            Err(_) => return Ok(()),
+        };
+    let bytes = match pixbuf.save_to_bufferv("png", &[]) {
         Ok(bytes) => bytes,
         Err(_) => return Ok(()),
     };
