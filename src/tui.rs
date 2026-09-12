@@ -302,12 +302,18 @@ fn draw_preview<W: Write>(stdout: &mut W, path: &PathBuf, area: Rect) -> io::Res
 }
 
 fn supports_kitty_graphics() -> bool {
+    // Ghostty advertises Kitty compatibility, but its Kitty graphics behavior
+    // is not stable enough for this direct protocol path. Use bounded chafa
+    // output there instead; native Kitty remains enabled for Kitty itself.
+    if std::env::var("TERM_PROGRAM")
+        .map(|program| program.eq_ignore_ascii_case("ghostty"))
+        .unwrap_or(false)
+    {
+        return false;
+    }
     std::env::var_os("KITTY_WINDOW_ID").is_some()
         || std::env::var("TERM")
             .map(|term| term == "xterm-kitty")
-            .unwrap_or(false)
-        || std::env::var("TERM_PROGRAM")
-            .map(|program| program.eq_ignore_ascii_case("ghostty"))
             .unwrap_or(false)
 }
 
