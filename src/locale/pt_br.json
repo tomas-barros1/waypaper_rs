@@ -1,0 +1,9 @@
+{
+  "choose_folder": "Escolher pasta",
+  "search_placeholder": "Pesquisar por nome do arquivo",
+  "wallpapers": "Papéis de parede",
+  "select_wallpaper": "Selecione um papel de parede",
+  "wallpapers_found": "%{count} papel(is) de parede · %{folder}",
+  "wallpaper_applied": "Papel de parede aplicado",
+  "could_not_apply": "Não foi possível aplicar o papel de parede"
+}

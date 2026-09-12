@@ -1,0 +1,9 @@
+{
+  "choose_folder": "Choose folder",
+  "search_placeholder": "Search wallpapers by filename",
+  "wallpapers": "Wallpapers",
+  "select_wallpaper": "Select a wallpaper",
+  "wallpapers_found": "%{count} wallpaper(s) · %{folder}",
+  "wallpaper_applied": "Wallpaper applied",
+  "could_not_apply": "Could not apply wallpaper"
+}
