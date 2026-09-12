@@ -1,7 +1,11 @@
 PREFIX ?= /usr
 DESTDIR ?=
 BINDIR := $(DESTDIR)$(PREFIX)/bin
+DESKTOPDIR := $(DESTDIR)$(PREFIX)/share/applications
+ICONDIR := $(DESTDIR)$(PREFIX)/share/icons/hicolor/512x512/apps
 TARGET := target/release/waypaper_rs
+DESKTOP := waypaper_rs.desktop
+ICON := icon.jpeg
 
 .PHONY: all build check test install uninstall clean
 
@@ -18,9 +22,13 @@ test:
 
 install: build
 	install -Dm755 $(TARGET) $(BINDIR)/waypaper_rs
+	install -Dm644 $(DESKTOP) $(DESKTOPDIR)/$(DESKTOP)
+	install -Dm644 $(ICON) $(ICONDIR)/waypaper_rs.jpeg
 
 uninstall:
 	rm -f $(BINDIR)/waypaper_rs
+	rm -f $(DESKTOPDIR)/$(DESKTOP)
+	rm -f $(ICONDIR)/waypaper_rs.jpeg
 
 clean:
 	cargo clean
