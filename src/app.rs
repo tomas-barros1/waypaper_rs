@@ -2,12 +2,16 @@ use crate::services::{cache::Cache, wallpaper_service::WallpaperService};
 use adw::prelude::*;
 use gtk::{
     Align, Box, Button, Entry, FileChooserAction, FileChooserNative, FlowBox, Label, Orientation,
-    Picture, ScrolledWindow, SelectionMode, glib,
+    Picture, ScrolledWindow, SelectionMode, gdk_pixbuf::Pixbuf, glib,
 };
 use std::{
     cell::{Cell, RefCell},
+    io::Cursor,
     path::PathBuf,
     rc::Rc,
+    sync::mpsc,
+    thread,
+    time::Duration,
 };
 
 pub fn build_ui(application: &adw::Application) {
@@ -126,34 +130,48 @@ fn populate_async(
         count = wallpapers.len(),
         folder = folder.display()
     ));
-    let mut wallpapers = wallpapers.into_iter();
+    let (sender, receiver) = mpsc::channel();
+    thread::spawn(move || {
+        for path in wallpapers {
+            let thumbnail = Pixbuf::from_file_at_scale(&path, 176, 110, true)
+                .ok()
+                .and_then(|pixbuf| pixbuf.save_to_bufferv("png", &[]).ok());
+            if sender.send((path, thumbnail)).is_err() {
+                break;
+            }
+        }
+    });
     let flow = flow.clone();
     let status = status.clone();
     let generation = generation.clone();
-    glib::idle_add_local(move || {
+    glib::timeout_add_local(Duration::from_millis(16), move || {
         if generation.get() != current_generation {
             return glib::ControlFlow::Break;
         }
-        // Decode only a few thumbnails per idle turn so GTK can draw and
-        // respond to input between batches.
-        for _ in 0..4 {
-            let Some(path) = wallpapers.next() else {
-                return glib::ControlFlow::Break;
-            };
-            add_thumbnail(&flow, &status, path);
+        // Decoding happens off the GTK thread. Only lightweight widget
+        // insertions happen per frame, keeping input and rendering responsive.
+        for _ in 0..8 {
+            match receiver.try_recv() {
+                Ok((path, bytes)) => {
+                    let pixbuf = bytes.and_then(|bytes| Pixbuf::from_read(Cursor::new(bytes)).ok());
+                    add_thumbnail(&flow, &status, path, pixbuf);
+                }
+                Err(mpsc::TryRecvError::Empty) => break,
+                Err(mpsc::TryRecvError::Disconnected) => return glib::ControlFlow::Break,
+            }
         }
         glib::ControlFlow::Continue
     });
 }
 
-fn add_thumbnail(flow: &FlowBox, status: &Label, path: PathBuf) {
+fn add_thumbnail(flow: &FlowBox, status: &Label, path: PathBuf, pixbuf: Option<Pixbuf>) {
     let button = Button::new();
     button.set_tooltip_text(Some(&path.display().to_string()));
     // Decode thumbnails, never the original wallpaper dimensions. A folder
     // with many 8K images must stay cheap in memory.
-    let picture = gtk::gdk_pixbuf::Pixbuf::from_file_at_scale(&path, 176, 110, true)
+    let picture = pixbuf
         .map(|pixbuf| Picture::for_paintable(&gtk::gdk::Texture::for_pixbuf(&pixbuf)))
-        .unwrap_or_else(|_| Picture::new());
+        .unwrap_or_else(Picture::new);
     button.set_size_request(180, 130);
     picture.set_size_request(176, 110);
     button.set_child(Some(&picture));
