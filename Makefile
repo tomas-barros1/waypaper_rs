@@ -23,6 +23,7 @@ test:
 install: build
 	install -Dm755 $(TARGET) $(BINDIR)/waypaper_rs
 	install -Dm644 $(DESKTOP) $(DESKTOPDIR)/$(DESKTOP)
+	-rm -f $(ICONDIR)/waypaper_rs.jpeg
 	install -Dm644 $(ICON) $(ICONDIR)/waypaper_rs.png
 	@if command -v gtk-update-icon-cache >/dev/null 2>&1; then \
 		gtk-update-icon-cache -f -t $(DESTDIR)$(PREFIX)/share/icons/hicolor >/dev/null 2>&1 || true; \
@@ -35,6 +36,7 @@ uninstall:
 	rm -f $(BINDIR)/waypaper_rs
 	rm -f $(DESKTOPDIR)/$(DESKTOP)
 	rm -f $(ICONDIR)/waypaper_rs.png
+	rm -f $(ICONDIR)/waypaper_rs.jpeg
 
 clean:
 	cargo clean
