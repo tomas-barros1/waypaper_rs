@@ -31,7 +31,7 @@ fn main() {
         return;
     }
     let application = adw::Application::builder()
-        .application_id("io.github.waypaper_rs")
+        .application_id("io.github.tomas_barros1.waypaper_rs")
         .build();
     application.connect_activate(|application| app::build_ui(application));
     application.run();

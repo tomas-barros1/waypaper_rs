@@ -8,3 +8,4 @@ Type=Application
 Categories=Utility;GTK;
 Keywords=wallpaper;background;Wayland;sway;Hyprland;
 StartupNotify=true
+StartupWMClass=io.github.tomas_barros1.waypaper_rs
