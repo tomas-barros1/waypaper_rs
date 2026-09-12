@@ -341,7 +341,7 @@ fn draw_kitty_preview<W: Write>(stdout: &mut W, path: &PathBuf, area: Rect) -> i
         if index == 0 {
             write!(
                 stdout,
-                "\x1b_Ga=T,f=100,c={},r={},m={};{}\x1b\\",
+                "\x1b_Ga=T,f=100,i=1,p=1,c={},r={},C=1,m={};{}\x1b\\",
                 area.width.saturating_sub(2),
                 area.height.saturating_sub(2),
                 more,
