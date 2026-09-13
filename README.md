@@ -17,6 +17,7 @@ cache, backend selection, and translations.
 - `swaybg` backend, used by default when available
 - `hyprpaper` backend
 - Persistent state in `$XDG_CACHE_HOME/waypaper-rs/state.json`
+- Persistent scaled-thumbnail cache in `$XDG_CACHE_HOME/waypaper-rs/thumbnails`
 - English and Brazilian Portuguese translations using `rust-i18n`
 - Optional terminal UI with keyboard navigation
 - Kitty graphics protocol previews in Kitty and Ghostty
@@ -91,6 +92,10 @@ waypaper_rs
 
 Choose a wallpaper folder, search by filename, and click a wallpaper to apply
 it. The selected folder and wallpaper are cached automatically.
+
+Scaled thumbnails are keyed by wallpaper path, file size, modification time,
+and requested dimensions. New files are picked up by the next folder scan;
+edited or replaced files automatically use a new cache entry.
 
 ## Restore wallpaper
 

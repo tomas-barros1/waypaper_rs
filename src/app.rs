@@ -1,4 +1,6 @@
-use crate::services::{cache::Cache, wallpaper_service::WallpaperService};
+use crate::services::{
+    cache::Cache, thumbnail_cache::ThumbnailCache, wallpaper_service::WallpaperService,
+};
 use adw::prelude::*;
 use gtk::{
     Align, Box, Button, Entry, FileChooserAction, FileChooserNative, FlowBox, Label, Orientation,
@@ -133,9 +135,7 @@ fn populate_async(
     let (sender, receiver) = mpsc::channel();
     thread::spawn(move || {
         for path in wallpapers {
-            let thumbnail = Pixbuf::from_file_at_scale(&path, 176, 110, true)
-                .ok()
-                .and_then(|pixbuf| pixbuf.save_to_bufferv("png", &[]).ok());
+            let thumbnail = ThumbnailCache::png(&path, 176, 110);
             if sender.send((path, thumbnail)).is_err() {
                 break;
             }

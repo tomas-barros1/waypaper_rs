@@ -1,4 +1,6 @@
-use crate::services::{cache::Cache, wallpaper_service::WallpaperService};
+use crate::services::{
+    cache::Cache, thumbnail_cache::ThumbnailCache, wallpaper_service::WallpaperService,
+};
 use base64::{Engine, engine::general_purpose::STANDARD};
 use crossterm::{
     cursor::MoveTo,
@@ -318,14 +320,9 @@ fn draw_kitty_preview<W: Write>(stdout: &mut W, path: &PathBuf, area: Rect) -> i
     let rows = area.height.saturating_sub(4).max(1);
     let pixel_width = i32::from(columns).saturating_mul(8).max(1);
     let pixel_height = i32::from(rows).saturating_mul(16).max(1);
-    let pixbuf =
-        match gtk::gdk_pixbuf::Pixbuf::from_file_at_scale(path, pixel_width, pixel_height, true) {
-            Ok(pixbuf) => pixbuf,
-            Err(_) => return Ok(()),
-        };
-    let bytes = match pixbuf.save_to_bufferv("png", &[]) {
-        Ok(bytes) => bytes,
-        Err(_) => return Ok(()),
+    let bytes = match ThumbnailCache::png(path, pixel_width, pixel_height) {
+        Some(bytes) => bytes,
+        None => return Ok(()),
     };
     let encoded = STANDARD.encode(bytes);
     write!(stdout, "\x1b_Ga=d,d=a,q=2\x1b\\")?;
